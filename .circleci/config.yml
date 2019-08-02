@@ -13,42 +13,7 @@ jobs:
           paths:
             - kind
 
-  build_base_image:
-    docker:
-      - image: circleci/golang:1.12.7
-    working_directory: ~/go/src/sig.k8s.io/kind
-    steps:
-      - setup_remote_docker
-      - attach_workspace:
-          at: /tmp/workspace
-      - run: git clone https://github.com/kubernetes-sigs/kind.git .
-      - run: cp /tmp/workspace/kind .
-      - run: ./kind build base-image --image aojea/kindbase:latest --source ~/go/src/sig.k8s.io/kind
-      - run: docker save -o base.tar aojea/kindbase:latest
-      - persist_to_workspace:
-          root: .
-          paths:
-            - base.tar
-
-  build_node_master:
-    docker:
-      - image: circleci/golang:1.12.7
-    working_directory: ~/go/src/k8s.io/kubernetes
-    steps:
-      - setup_remote_docker
-      - attach_workspace:
-          at: /tmp/workspace
-      - run: docker load -i /tmp/workspace/base.tar
-      - run: git clone https://github.com/kubernetes/kubernetes.git .
-      - run: cp /tmp/workspace/kind .
-      - run: ./kind build node-image --base-image aojea/kindbase:latest --image aojea/kindnode:latest --type docker --kube-root ~/go/src/k8s.io/kubernetes --loglevel debug
-      - run: docker save -o node.tar aojea/kindnode:latest
-      - persist_to_workspace:
-          root: .
-          paths:
-            - node.tar
-
-  e2e_ipv4:
+  build_node_image:
     machine:
       enabled: true
       image: ubuntu-1604:201903-01
@@ -64,7 +29,10 @@ jobs:
             chmod +x kubectl
             sudo cp /tmp/workspace/kind /usr/local/bin/
             sudo cp kubectl /usr/local/bin/
-      - run: docker load -i /tmp/workspace/node.tar
+      - run: git clone https://github.com/kubernetes-sigs/kind.git /tmp/kind
+      - run: kind build base-image --image aojea/kindbase:latest --source /tmp/kind
+      - run: git clone https://github.com/kubernetes/kubernetes.git .
+      - run: kind build node-image --base-image aojea/kindbase:latest --image aojea/kindnode:latest --type docker --kube-root ~/go/src/k8s.io/kubernetes --loglevel debug
       - run:
           name: Create kind cluster
           command: |
@@ -73,6 +41,12 @@ jobs:
             kubectl get nodes -o wide
             kubectl get pods --all-namespaces -o wide
             kubectl get services --all-namespaces -o wide
+      - run: docker save -o node.tar aojea/kindnode:latest
+      - persist_to_workspace:
+          root: .
+          paths:
+            - node.tar
+
   publish_node_latest:
     docker:
       - image: circleci/golang:1.12.7
@@ -93,18 +67,9 @@ workflows:
   build_images:
     jobs:
       - build_kind
-      - build_base_image:
+      - build_node_image:
           requires:
             - build_kind
-      - build_node_master:
-          requires:
-            - build_base_image
-      - e2e_ipv4:
-          requires:
-            - build_node_master
-      - publish_node_latest:
-          requires:
-            - e2e_ipv4
   nightly:
     triggers:
       - schedule:
@@ -115,16 +80,7 @@ workflows:
                 - master
     jobs:
       - build_kind
-      - build_base_image:
+      - build_node_image:
           requires:
             - build_kind
-      - build_node_master:
-          requires:
-            - build_base_image
-      - e2e_ipv4:
-          requires:
-            - build_node_master
-      - publish_node_latest:
-          requires:
-            - e2e_ipv4
 
