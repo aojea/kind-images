@@ -5,7 +5,7 @@ jobs:
       enabled: true
       image: ubuntu-1604:201903-01
       docker_layer_caching: true
-    working_directory: ~/go/src/sigs.k8s.io/kind
+    working_directory: /usr/local/go/src/sigs.k8s.io/kind
     steps:
       - run: git clone https://github.com/kubernetes-sigs/kind.git .
       - run: make build
