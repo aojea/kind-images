@@ -103,4 +103,12 @@ workflows:
       - publish_node_latest:
           requires:
             - e2e_ipv4
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
 
