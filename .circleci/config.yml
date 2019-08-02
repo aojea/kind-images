@@ -22,7 +22,8 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run: git clone https://github.com/kubernetes-sigs/kind.git .
-      - run: /tmp/workspace/kind build base-image --image aojea/kindbase:latest --source ~/go/src/sig.k8s.io/kind
+      - run: cp /tmp/workspace/kind .
+      - run: ./kind build base-image --image aojea/kindbase:latest --source ~/go/src/sig.k8s.io/kind
       - run: docker save -o base.tar aojea/kindbase:latest
       - persist_to_workspace:
           root: .
@@ -39,7 +40,8 @@ jobs:
           at: /tmp/workspace
       - run: docker load -i /tmp/workspace/base.tar
       - run: git clone https://github.com/kubernetes/kubernetes.git .
-      - run: /tmp/workspace/kind build node-image --base-image aojea/kindbase:latest --image aojea/kindnode:latest --type docker --kube-root ~/go/src/k8s.io/kubernetes --loglevel debug
+      - run: cp /tmp/workspace/kind .
+      - run: ./kind build node-image --base-image aojea/kindbase:latest --image aojea/kindnode:latest --type docker --kube-root ~/go/src/k8s.io/kubernetes --loglevel debug
       - run: docker save -o node.tar aojea/kindnode:latest
       - persist_to_workspace:
           root: .
