@@ -111,4 +111,18 @@ workflows:
             branches:
               only:
                 - master
+    jobs:
+      - build_kind
+      - build_base_image:
+          requires:
+            - build_kind
+      - build_node_master:
+          requires:
+            - build_base_image
+      - e2e_ipv4:
+          requires:
+            - build_node_master
+      - publish_node_latest:
+          requires:
+            - e2e_ipv4
 
