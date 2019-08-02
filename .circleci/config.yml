@@ -1,0 +1,90 @@
+version: 2
+jobs:
+  build_kind:
+    docker:
+      - image: circleci/golang:1.12.7
+    working_directory: ~/go/src/sig.k8s.io/kind
+    steps:
+      - setup_remote_docker
+      - run: GO111MODULE="on" go get sigs.k8s.io/kind@master
+      - run: cp $(go env GOPATH)/bin/kind .
+      - run: chmod +x kind
+      - run: ./kind build base-image --image aojea/kindbase:latest
+      - run: docker save -o base.tar aojea/kindbase:latest
+      - persist_to_workspace:
+          root: .
+          paths:
+            - kind
+            - base.tar
+  build_node_master:
+    docker:
+      - image: circleci/golang:1.12.7
+    working_directory: ~/go/src/k8s.io/kubernetes
+    steps:
+      - setup_remote_docker
+      - attach_workspace:
+          at: /tmp/workspace
+      - run: docker load -i /tmp/workspace/base.tar
+      - run: git clone https://github.com/kubernetes/kubernetes.git .
+      - run: /tmp/workspace/kind build node-image --base-image aojea/kindbase:latest --image aojea/kindnode:latest --type docker --kube-root ~/go/src/k8s.io/kubernetes --loglevel debug
+      - run: docker save -o node.tar aojea/kindnode:latest
+      - persist_to_workspace:
+          root: .
+          paths:
+            - node.tar
+
+  e2e_ipv4:
+    machine:
+      enabled: true
+      image: ubuntu-1604:201903-01
+      docker_layer_caching: true
+    working_directory: ~/go/src/k8s.io/kubernetes
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Install dependencies
+          command: |
+            curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl
+            chmod +x kubectl
+            sudo cp /tmp/workspace/kind /usr/local/bin/
+            sudo cp kubectl /usr/local/bin/
+      - run: docker load -i /tmp/workspace/node.tar
+      - run:
+          name: Create kind cluster
+          command: |
+            kind create cluster --image aojea/kindnode:latest --loglevel debug --wait 1m
+            export KUBECONFIG="$(kind get kubeconfig-path --name="kind")"
+            kubectl get nodes -o wide
+            kubectl get pods --all-namespaces -o wide
+            kubectl get services --all-namespaces -o wide
+  publish_node_latest:
+    docker:
+      - image: circleci/golang:1.12.7
+    working_directory: ~/go/src/sig.k8s.io/kind
+    steps:
+      - setup_remote_docker
+      - attach_workspace:
+          at: /tmp/workspace
+      - run: docker load -i /tmp/workspace/node.tar
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push aojea/kindnode:latest
+
+workflows:
+  version: 2
+  build_images:
+    jobs:
+      - build_kind
+      - build_node_master:
+          requires:
+            - build_kind
+      - e2e_ipv4:
+          requires:
+            - build_node_master
+      - publish_node_latest:
+          requires:
+            - e2e_ipv4
+
