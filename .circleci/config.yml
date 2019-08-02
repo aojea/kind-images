@@ -22,7 +22,7 @@ jobs:
           name: Create kind cluster
           command: |
             ./bin/kind create cluster --image aojea/kindnode:latest --loglevel debug --wait 1m
-            export KUBECONFIG="$(kind get kubeconfig-path --name="kind")"
+            export KUBECONFIG="$(./bin/kind get kubeconfig-path --name="kind")"
             kubectl get nodes -o wide
             kubectl get pods --all-namespaces -o wide
             kubectl get services --all-namespaces -o wide
