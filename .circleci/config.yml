@@ -6,6 +6,7 @@ jobs:
     working_directory: ~/go/src/sig.k8s.io/kind
     steps:
       - setup_remote_docker
+      - run: git clone https://github.com/kubernetes-sigs/kind.git .
       - run: GO111MODULE="on" go get sigs.k8s.io/kind@master
       - run: cp $(go env GOPATH)/bin/kind .
       - run: chmod +x kind
