@@ -7,17 +7,17 @@ jobs:
       docker_layer_caching: true
     working_directory: ~/go/src/sigs.k8s.io/kind
     steps:
-      - run:
-          name: Install dependencies
-          command: |
-            curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl
-            chmod +x kubectl
-            sudo cp kubectl /usr/local/bin/
       - run: git clone https://github.com/kubernetes-sigs/kind.git .
       - run: make install
       - run: kind build base-image --image aojea/kindbase:latest
       - run: git clone https://github.com/kubernetes/kubernetes.git /tmp/kubernetes
       - run: kind build node-image --base-image aojea/kindbase:latest --image aojea/kindnode:latest --type docker --kube-root /tmp/kubernetes --loglevel debug
+      - run:
+          name: Install kubectl
+          command: |
+            curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl
+            chmod +x kubectl
+            sudo cp kubectl /usr/local/bin/
       - run:
           name: Create kind cluster
           command: |
