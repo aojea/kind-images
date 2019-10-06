@@ -5,7 +5,7 @@ to create node images with kubernetes master version.
 
 These images are published every night with the format:
 
-aojea/kindnode:<kubernetes_version>
+aojea/kindnode:kind<kind_commit>k8s<kubernetes_commit>
 
 ## Important
 
