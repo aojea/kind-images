@@ -31,6 +31,8 @@ jobs:
           command: |
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push aojea/kindnode:latest
+            export KUBE_VERSION=$(docker exec kind-control-plane cat /kind/version)
+            docker push aojea/kindnode:${KUBE_VERSION}
 
 workflows:
   version: 2
