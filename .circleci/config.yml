@@ -33,7 +33,8 @@ jobs:
             docker push aojea/kindnode:latest
             export KUBE_VERSION=$(git -C /tmp/kubernetes log -1 --pretty='%h')
             export KIND_VERSION=$(git log -1 --pretty='%h')
-            docker push aojea/kindnode:kind${KIND_VERSION}k8s${KUBE_VERSION}
+            docker tag aojea/kindnode:latest aojea/kindnode:kind${KIND_VERSION}_k8s${KUBE_VERSION}
+            docker push aojea/kindnode:kind${KIND_VERSION}_k8s${KUBE_VERSION}
 
 workflows:
   version: 2
