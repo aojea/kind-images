@@ -10,7 +10,7 @@ jobs:
       - run: make build
       - run: ./bin/kind build base-image --image aojea/kindbase:latest
       - run: git clone https://github.com/kubernetes/kubernetes.git /tmp/kubernetes
-      - run: ./bin/kind build node-image --base-image aojea/kindbase:latest --image aojea/kindnode:latest --type docker --kube-root /tmp/kubernetes --loglevel debug
+      - run: ./bin/kind build node-image --base-image aojea/kindbase:latest --image aojea/kindnode:latest --type docker --kube-root /tmp/kubernetes -v=3
       - run:
           name: Install kubectl
           command: |
@@ -20,8 +20,9 @@ jobs:
       - run:
           name: Create kind cluster
           command: |
-            ./bin/kind create cluster --image aojea/kindnode:latest --loglevel debug --wait 1m
-            export KUBECONFIG="$(./bin/kind get kubeconfig-path --name="kind")"
+            KUBECONFIG="${HOME}/kind-test-config"
+            export KUBECONFIG
+            ./bin/kind create cluster --image aojea/kindnode:latest -v=3 --wait 1m
             kubectl get nodes -o wide
             kubectl get pods --all-namespaces -o wide
             kubectl get services --all-namespaces -o wide
