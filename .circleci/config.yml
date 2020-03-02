@@ -8,9 +8,8 @@ jobs:
     steps:
       - run: git clone https://github.com/kubernetes-sigs/kind.git .
       - run: make build
-      - run: ./bin/kind build base-image --image aojea/kindbase:latest
       - run: git clone https://github.com/kubernetes/kubernetes.git /tmp/kubernetes
-      - run: ./bin/kind build node-image --base-image aojea/kindbase:latest --image aojea/kindnode:latest --type docker --kube-root /tmp/kubernetes -v=3
+      - run: ./bin/kind build node-image --image aojea/kindnode:latest --type docker --kube-root /tmp/kubernetes -v=3
       - run:
           name: Install kubectl
           command: |
