@@ -21,10 +21,17 @@ jobs:
           command: |
             KUBECONFIG="${HOME}/kind-test-config"
             export KUBECONFIG
-            ./bin/kind create cluster --image aojea/kindnode:latest -v=3 --wait 1m
+            ./bin/kind create cluster --image aojea/kindnode:latest -v=3 --wait 1m --retain
             kubectl get nodes -o wide
             kubectl get pods --all-namespaces -o wide
             kubectl get services --all-namespaces -o wide
+      - run:
+          command: |
+            mkdir -p /tmp/kind
+            ./bin/kind export logs /tmp/kind
+          when: on_fail
+      - store_artifacts:
+          path: /tmp/kind
       - run:
           name: Publish Docker Image to Docker Hub
           command: |
