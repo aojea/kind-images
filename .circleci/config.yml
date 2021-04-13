@@ -3,13 +3,16 @@ jobs:
   build_node_image:
     machine:
       enabled: true
-      image: ubuntu-1604:201903-01
+      image: ubuntu-2004:202101-01
     working_directory: ~/.go_workspace/src/sigs.k8s.io/kind
     steps:
       - run: git clone https://github.com/kubernetes-sigs/kind.git .
       - run: make build
       - run: git clone https://github.com/kubernetes/kubernetes.git /tmp/kubernetes
-      - run: ./bin/kind build node-image --image aojea/kindnode:latest --kube-root /tmp/kubernetes -v=3
+      - run:
+          name: Build node image
+          no_output_timeout: 30m
+          command: ./bin/kind build node-image --image aojea/kindnode:latest --kube-root /tmp/kubernetes -v=3
       - run:
           name: Install kubectl
           command: |
