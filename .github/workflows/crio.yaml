@@ -44,28 +44,7 @@ jobs:
 
       - name: Create multi node cluster
         run: |
-          cat <<EOF | kind create cluster -v7 --wait 1m --retain --config=-
-          kind: Cluster
-          apiVersion: kind.x-k8s.io/v1alpha4
-          nodes:
-          - role: control-plane
-            kubeadmConfigPatches:
-            - |
-              kind: InitConfiguration
-              nodeRegistration:
-                criSocket: unix:///var/run/crio/crio.sock
-            kubeadmConfigPatches:
-            - |
-              kind: JoinConfiguration
-              nodeRegistration:
-                criSocket: unix:///var/run/crio/crio.sock
-          - role: worker
-            kubeadmConfigPatches:
-            - |
-              kind: JoinConfiguration
-              nodeRegistration:
-                criSocket: unix:///var/run/crio/crio.sock
-          EOF
+          kind create cluster -v7 --wait 1m --retain --config=kind-crio.yaml
 
       - name: Get Cluster status
         run: |
