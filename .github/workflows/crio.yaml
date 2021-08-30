@@ -44,7 +44,7 @@ jobs:
 
       - name: Create multi node cluster
         run: |
-          kind create cluster -v7 --wait 1m --retain --config=kind-crio.yaml
+          kind create cluster -v7 --wait 1m --retain --config=kind-crio.yaml --image=aojea/kindnode:latest
 
       - name: Get Cluster status
         run: |
