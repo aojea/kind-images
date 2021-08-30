@@ -48,6 +48,10 @@ jobs:
 
       - name: Get Cluster status
         run: |
+          # wait network is ready
+          kubectl wait --for=condition=ready pods --namespace=kube-system -l k8s-app=kube-dns
+          kubectl get nodes -o wide
+          kubectl get pods -A
           # Check everything is fine
           kubectl wait --for=condition=ready pods --all --timeout=100s
           kubectl get nodes -o wide
