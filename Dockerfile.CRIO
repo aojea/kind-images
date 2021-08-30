@@ -1,0 +1,31 @@
+# https://gist.github.com/aojea/bd1fb766302779b77b8f68fa0a81c0f2
+ARG IMAGE=kindest/node
+ARG VERSION=1.21
+ARG MINOR=1
+ARG OS=xUbuntu_21.04
+
+FROM ${IMAGE}:v${VERSION}.${MINOR}
+
+ARG VERSION
+ARG OS
+
+RUN echo "Installing Packages ..." \
+    && DEBIAN_FRONTEND=noninteractive clean-install \
+    tcpdump \
+    vim \
+    gnupg \
+    tzdata \
+ && echo "Installing cri-o" \
+    && export CONTAINERS_URL="https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/${OS}/" \
+    && echo "deb ${CONTAINERS_URL} /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list \
+    && export CRIO_URL="http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${VERSION}/${OS}/" \
+    && echo "deb ${CRIO_URL} /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:${VERSION}.list \
+    && curl -L ${CONTAINERS_URL}Release.key | apt-key add - || true \
+    && curl -L ${CRIO_URL}Release.key | apt-key add - || true \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get --option=Dpkg::Options::=--force-confdef install -y cri-o cri-o-runc \
+    && ln -s /usr/libexec/podman/conmon /usr/local/bin/conmon \
+    && printf "[crio.runtime]\ncgroup_manager=\"cgroupfs\"\nconmon_cgroup=\"pod\"\n" > /etc/crio/crio.conf \
+    && sed -i 's/containerd/crio/g' /etc/crictl.yaml \
+ && systemctl disable containerd \
+ && systemctl enable crio

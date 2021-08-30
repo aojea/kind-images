@@ -1,0 +1,90 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+env:
+  GO_VERSION: "1.17.0"
+
+jobs:
+  nigthly:
+    name: Nightly
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+        id: go
+
+      - name: Set up environment
+        run: |
+          export GOPATH=$(go env GOPATH)
+          echo "GOPATH=$GOPATH" >> $GITHUB_ENV
+          echo "$GOPATH/bin" >> $GITHUB_PATH
+
+      - name: Check out kubernetes
+        uses: actions/checkout@v2
+        with:
+            path: src/github.com/kubernetes/kubernetes
+            repository: kubernetes/kubernetes
+
+      - name: Install kind
+        run: |
+          go install sigs.k8s.io/kind@main
+          kind --version
+
+      - name: Build kind image
+        run: |
+          kind build node-image src/github.com/kubernetes/kubernetes --image aojea/kindnode:latest
+
+      - name: Create multi node cluster
+        run: |
+          cat <<EOF | kind create cluster -v7 --wait 1m --retain --config=-
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          nodes:
+          - role: control-plane
+          - role: worker
+          - role: worker
+          EOF
+
+      - name: Get Cluster status
+        run: |
+          # wait network is ready
+          kubectl wait --for=condition=ready pods --namespace=kube-system -l k8s-app=kube-dns
+          kubectl get nodes -o wide
+          kubectl get pods -A
+
+      - name: Login to Quay.io
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+
+      - name: Publish image
+        run: |
+          export KUBE_VERSION=$(git -C src/github.com/kubernetes/kubernetes log -1 --pretty='%h')
+          docker tag aojea/kindnode:latest quay.io/aojea/kindnode:${KUBE_VERSION}
+          docker push quay.io/aojea/kindnode:${KUBE_VERSION}
+
+      - name: Export logs
+        if: always()
+        run: |
+          mkdir -p /tmp/kind/logs
+          kind export logs /tmp/kind/logs
+          sudo chown -R $USER:$USER /tmp/kind/logs
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: kind-logs-${{ env.JOB_NAME }}-${{ github.run_id }}
+          path: /tmp/kind/logs
+
+      - name: Delete cluster
+        run: kind delete cluster
