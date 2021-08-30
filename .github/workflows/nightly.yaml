@@ -29,7 +29,7 @@ jobs:
       - name: Check out kubernetes
         uses: actions/checkout@v2
         with:
-            path: /tmp/kubernetes
+            path: tmp/kubernetes
             repository: kubernetes/kubernetes
 
       - name: Install kind
@@ -39,7 +39,7 @@ jobs:
 
       - name: Build kind image
         run: |
-          kind build node-image /tmp/kubernetes --image aojea/kindnode:latest
+          kind build node-image tmp/kubernetes --image aojea/kindnode:latest
 
       - name: Create multi node cluster
         run: |
@@ -68,7 +68,7 @@ jobs:
 
       - name: Publish image
         run: |
-          export KUBE_VERSION=$(git -C /tmp/kubernetes log -1 --pretty='%h')
+          export KUBE_VERSION=$(git -C tmp/kubernetes log -1 --pretty='%h')
           docker tag aojea/kindnode:latest quay.io/aojea/kindnode:${KUBE_VERSION}
           docker push quay.io/aojea/kindnode:${KUBE_VERSION}
 
