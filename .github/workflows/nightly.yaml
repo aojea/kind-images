@@ -26,11 +26,8 @@ jobs:
           echo "GOPATH=$GOPATH" >> $GITHUB_ENV
           echo "$GOPATH/bin" >> $GITHUB_PATH
 
-      - name: Check out kubernetes
+      - name: Check out
         uses: actions/checkout@v2
-        with:
-            path: tmp/kubernetes
-            repository: kubernetes/kubernetes
 
       - name: Install kind
         run: |
@@ -39,7 +36,9 @@ jobs:
 
       - name: Build kind image
         run: |
-          kind build node-image tmp/kubernetes --image aojea/kindnode:latest
+          mkdir -p tmp/kubernetes
+          git clone --single-branch --branch master https://github.com/kubernetes/kubernetes tmp/kubernetes
+          kind build node-image $PWD/tmp/kubernetes --image aojea/kindnode:latest
 
       - name: Create multi node cluster
         run: |
