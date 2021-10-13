@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+env:
+  GO_VERSION: "1.17.0"
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [1.14,1.15,1.16,1.17,1.18,1.19,1.20,1.21,1.22]
+    timeout-minutes: 60
+    steps:
+      - name: Check out
+        uses: actions/checkout@v2
+
+      - name: Checkout kind
+        uses: actions/checkout@v2
+        with:
+          repository: sig.k8s.io/kind
+          path: kind
+
+      - name: Install kind
+        run: |
+          cd kind
+          make all
+          bin/kind version
+
+      - name: Build kind image
+        run: |
+          mkdir -p tmp/kubernetes
+          git clone --single-branch --branch ${{ matrix.version }} https://github.com/kubernetes/kubernetes tmp/kubernetes
+          bin/kind build node-image $PWD/tmp/kubernetes --image aojea/kindnode:${{ matrix.version }}
+
+      - name: Create cluster
+        run: |
+          bin/kind create cluster -v7 --wait 1m --retain --image aojea/kindnode:${{ matrix.version }}
+
+      - name: Get Cluster status
+        run: |
+          # wait network is ready
+          kubectl wait --for=condition=ready pods --namespace=kube-system -l k8s-app=kube-dns
+          kubectl get nodes -o wide
+          kubectl get pods -A
+
+      - name: Login to Quay.io
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+
+      - name: Publish image
+        run: |
+          docker tag aojea/kindnode:latest quay.io/aojea/kindnode:${{ matrix.version }}
+          docker push quay.io/aojea/kindnode:${{ matrix.version }}
+
+      - name: Export logs
+        if: always()
+        run: |
+          mkdir -p /tmp/kind/logs
+          kind export logs /tmp/kind/logs
+          sudo chown -R $USER:$USER /tmp/kind/logs
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: kind-logs-${{ env.JOB_NAME }}-${{ github.run_id }}
+          path: /tmp/kind/logs
+
+      - name: Delete cluster
+        run: bin/kind delete cluster
