@@ -3,9 +3,6 @@ name: Release
 on:
   workflow_dispatch:
 
-env:
-  GO_VERSION: "1.17.0"
-
 jobs:
   release:
     name: Release
