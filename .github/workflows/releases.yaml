@@ -55,7 +55,7 @@ jobs:
 
       - name: Publish image
         run: |
-          docker tag aojea/kindnode:latest quay.io/aojea/kindnode:${{ matrix.version }}
+          docker tag aojea/kindnode:${{ matrix.version }} quay.io/aojea/kindnode:${{ matrix.version }}
           docker push quay.io/aojea/kindnode:${{ matrix.version }}
 
       - name: Export logs
