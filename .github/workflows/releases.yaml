@@ -32,7 +32,7 @@ jobs:
       - name: Build kind image
         run: |
           mkdir -p tmp/kubernetes
-          git clone --single-branch --branch ${{ matrix.version }} https://github.com/kubernetes/kubernetes tmp/kubernetes
+          git clone --single-branch --branch release-${{ matrix.version }} https://github.com/kubernetes/kubernetes tmp/kubernetes
           bin/kind build node-image $PWD/tmp/kubernetes --image aojea/kindnode:${{ matrix.version }}
 
       - name: Create cluster
