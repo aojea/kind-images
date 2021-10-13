@@ -28,17 +28,16 @@ jobs:
           cd kind
           make all
           bin/kind version
-          make install INSTALL_DIR=/usr/local/bin
 
       - name: Build kind image
         run: |
           mkdir -p tmp/kubernetes
           git clone --single-branch --branch release-${{ matrix.version }} https://github.com/kubernetes/kubernetes tmp/kubernetes
-          /usr/local/bin/kind build node-image $PWD/tmp/kubernetes --image aojea/kindnode:${{ matrix.version }}
+          ./kind/bin/kind build node-image $PWD/tmp/kubernetes --image aojea/kindnode:${{ matrix.version }}
 
       - name: Create cluster
         run: |
-          /usr/local/bin/kind create cluster -v7 --wait 1m --retain --image aojea/kindnode:${{ matrix.version }}
+          ./kind/bin/kind create cluster -v7 --wait 1m --retain --image aojea/kindnode:${{ matrix.version }}
 
       - name: Get Cluster status
         run: |
@@ -74,4 +73,4 @@ jobs:
           path: /tmp/kind/logs
 
       - name: Delete cluster
-        run: /usr/local/bin/kind delete cluster
+        run: ./kind/bin/kind delete cluster
