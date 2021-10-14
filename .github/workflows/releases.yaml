@@ -26,8 +26,8 @@ jobs:
       - name: Install kind
         run: |
           cd kind
-          git fetch origin pull/2465/head:bump_base
-          git checkout bump_base
+          # git fetch origin pull/2465/head:bump_base
+          # git checkout bump_base
           make all
           bin/kind version
 
