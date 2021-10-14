@@ -13,13 +13,6 @@ jobs:
         version: ["1.14","1.15","1.16","1.17","1.18","1.19","1.20","1.21","1.22"]
     timeout-minutes: 60
     steps:
-      - name: Download Docker with patched seccomp
-        run: |
-          sudo systemctl stop docker containerd
-          sudo apt-get remove --autoremove -y moby-engine moby-cli moby-buildx moby-containerd moby-runc
-          sudo add-apt-repository -y ppa:pascallj/docker.io-clone3
-          sudo apt-get install -y docker.io
-
       - name: Check out
         uses: actions/checkout@v2
 
