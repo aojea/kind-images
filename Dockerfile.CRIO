@@ -1,6 +1,6 @@
 # https://gist.github.com/aojea/bd1fb766302779b77b8f68fa0a81c0f2
 ARG IMAGE=kindest/node
-ARG VERSION=1.21
+ARG VERSION=1.22
 ARG MINOR=1
 ARG OS=xUbuntu_21.04
 
