@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["1.14","1.15","1.16","1.17","1.18","1.19","1.20","1.21","1.22","1.23"]
+        version: ["v1.14.10","v1.15.12","v1.16.15","v1.17.17","v1.18.20","v1.19.16","v1.20.15","v1.21.10","v1.22.7","v1.23.4"]
     timeout-minutes: 60
     steps:
       - name: Check out
@@ -34,7 +34,7 @@ jobs:
       - name: Build kind image
         run: |
           mkdir -p tmp/kubernetes
-          git clone --single-branch --branch release-${{ matrix.version }} https://github.com/kubernetes/kubernetes tmp/kubernetes
+          git clone --single-branch --branch ${{ matrix.version }} https://github.com/kubernetes/kubernetes tmp/kubernetes
           ./kind/bin/kind build node-image $PWD/tmp/kubernetes --image aojea/kindnode:${{ matrix.version }}
 
       - name: Create cluster
