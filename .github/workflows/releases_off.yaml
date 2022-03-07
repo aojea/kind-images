@@ -42,5 +42,5 @@ jobs:
 
       - name: Publish image
         run: |
-          hack/release/build/push-node.sh
+          KUBEROOT=tmp/kubernetes hack/release/build/push-node.sh
 
