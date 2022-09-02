@@ -45,7 +45,7 @@ jobs:
           mkdir -p /tmp/results
           ./e2e.test -ginkgo.v \
             --ginkgo.timeout="24h" \
-            --ginkgo.focus="\[Conformance\]"" \
+            --ginkgo.focus="\[Conformance\]" \
             --provider=skeleton \
             --kubeconfig=$PWD/kconfig \
             --report-dir=/tmp/results \
