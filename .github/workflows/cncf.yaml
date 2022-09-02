@@ -1,11 +1,11 @@
-name: Release
+name: CNCF
 
 on:
   workflow_dispatch:
 
 jobs:
   release:
-    name: Release
+    name: CNCF
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
