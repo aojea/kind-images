@@ -24,7 +24,14 @@ jobs:
 
       - name: Create cluster
         run: |
-          ./kind create cluster -v7 --wait 1m --retain --image kindest/node:${{ matrix.k8s_version }}
+          cat <<EOF | ./kind create cluster -v7 --wait 1m --retain --image kindest/node:${{ matrix.k8s_version }} --config=-
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          nodes:
+          - role: control-plane
+          - role: worker
+          - role: worker
+          EOF
 
       - name: Get Cluster status
         run: |
