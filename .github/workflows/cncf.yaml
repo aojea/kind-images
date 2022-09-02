@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: ["v1.25.0"]
+        kind_version: ["v0.15.0"]
+    timeout-minutes: 600
+    steps:
+      - name: Check out
+        uses: actions/checkout@v2
+
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/${{ matrix.kind_version }}/kind-linux-amd64
+          chmod +x ./kind
+
+      - name: Create cluster
+        run: |
+          ./kind create cluster -v7 --wait 1m --retain --image kindest/node:${{ matrix.k8s_version }}
+
+      - name: Get Cluster status
+        run: |
+          # wait network is ready
+          kubectl wait --for=condition=ready pods --namespace=kube-system -l k8s-app=kube-dns
+          kubectl get nodes -o wide
+          kubectl get pods -A
+
+      - name: Install e2e test binary for the corresponding version 
+        run: |
+          curl -L https://dl.k8s.io/${{ matrix.kind_version }}/kubernetes-test-linux-amd64.tar.gz -o ./kubernetes-test-linux-amd64.tar.gz
+          tar xvzf ./kubernetes-test-linux-amd64.tar.gz \
+            --strip-components=3 kubernetes/test/bin/ginkgo kubernetes/test/bin/e2e.test
+
+      - name: Run conformance
+        run: |
+          ./kind export kubeconfig --kubeconfig $PWD/kconfig --internal
+          mkdir -p /tmp/results
+          ./e2e.test -ginkgo.v \
+            --ginkgo.timeout="24h" \
+            --ginkgo.focus="\[Conformance\]"" \
+            --provider=skeleton \
+            --kubeconfig=$PWD/kconfig \
+            --report-dir=/tmp/results \
+            --report-prefix=kind
+
+      - name: Upload conformance results
+        uses: actions/upload-artifact@v2
+        with:
+          name: kind-logs-${{ env.JOB_NAME }}-${{ github.run_id }}
+          path: /tmp/results
+
+      - name: Export logs
+        run: |
+          mkdir -p /tmp/kind/logs
+          kind export logs /tmp/kind/logs
+          sudo chown -R $USER:$USER /tmp/kind/logs
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: kind-logs-${{ env.JOB_NAME }}-${{ github.run_id }}
+          path: /tmp/kind/logs
+
+      - name: Delete cluster
+        run: ./kind delete cluster
