@@ -51,12 +51,13 @@ jobs:
           ./kind export kubeconfig --kubeconfig $PWD/kconfig
           mkdir -p /tmp/results
           ./e2e.test -ginkgo.v \
+            --ginkgo.no-color \
             --ginkgo.timeout="24h" \
+            --ginkgo.output-interceptor-mode=none \
             --ginkgo.focus="\[Conformance\]" \
             --provider=skeleton \
             --kubeconfig=$PWD/kconfig \
-            --report-dir=/tmp/results \
-            --report-prefix=kind
+            --report-dir=/tmp/results | tee /tmp/results/e2e.log
 
       - name: Upload conformance results
         uses: actions/upload-artifact@v2
