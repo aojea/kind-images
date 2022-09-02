@@ -41,7 +41,7 @@ jobs:
 
       - name: Run conformance
         run: |
-          ./kind export kubeconfig --kubeconfig $PWD/kconfig --internal
+          ./kind export kubeconfig --kubeconfig $PWD/kconfig
           mkdir -p /tmp/results
           ./e2e.test -ginkgo.v \
             --ginkgo.timeout="24h" \
