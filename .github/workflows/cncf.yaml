@@ -48,7 +48,7 @@ jobs:
 
       - name: Run conformance
         run: |
-          ./sonobuoy run --mode=certified-conformance
+          ./sonobuoy run --mode=certified-conformance --wait
           
       - name: Get conformance results
         run: |
