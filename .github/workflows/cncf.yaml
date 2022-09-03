@@ -40,42 +40,27 @@ jobs:
           kubectl get nodes -o wide
           kubectl get pods -A
 
-      - name: Install e2e test binary for the corresponding version 
+      - name: Install suonoboy
         run: |
-          curl -L https://dl.k8s.io/${{ matrix.k8s_version }}/kubernetes-test-linux-amd64.tar.gz -o ./kubernetes-test-linux-amd64.tar.gz
-          tar xvzf ./kubernetes-test-linux-amd64.tar.gz \
-            --strip-components=3 kubernetes/test/bin/ginkgo kubernetes/test/bin/e2e.test
+          curl -L https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.56.10/sonobuoy_0.56.10_linux_amd64.tar.gz -o ./sonobuoy.tar.gz
+          tar xvzf ./sonobuoy.tar.gz
+          chmod +x ./sonobuoy
 
       - name: Run conformance
         run: |
-          ./kind export kubeconfig --kubeconfig $PWD/kconfig
-          mkdir -p /tmp/results
-          ./e2e.test -ginkgo.v \
-            --ginkgo.no-color \
-            --ginkgo.timeout="24h" \
-            --ginkgo.output-interceptor-mode=none \
-            --ginkgo.focus="\[Conformance\]" \
-            --provider=skeleton \
-            --kubeconfig=$PWD/kconfig \
-            --report-dir=/tmp/results | tee /tmp/results/e2e.log
-
+          ./sonobuoy run --mode=certified-conformance
+          
+      - name: Get conformance results
+        run: |
+          outfile=$(./sonobuoy retrieve)
+          mkdir /tmp/results
+          tar xzf $outfile -C /tmp/results
+          
       - name: Upload conformance results
         uses: actions/upload-artifact@v2
         with:
           name: e2e-results-${{ env.JOB_NAME }}-${{ github.run_id }}
           path: /tmp/results
-
-      - name: Export logs
-        run: |
-          mkdir -p /tmp/kind/logs
-          kind export logs /tmp/kind/logs
-          sudo chown -R $USER:$USER /tmp/kind/logs
-
-      - name: Upload logs
-        uses: actions/upload-artifact@v2
-        with:
-          name: kind-logs-${{ env.JOB_NAME }}-${{ github.run_id }}
-          path: /tmp/kind/logs
 
       - name: Delete cluster
         run: ./kind delete cluster
